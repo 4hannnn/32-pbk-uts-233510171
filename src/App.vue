@@ -1,5 +1,14 @@
 <template>
-  <div class="container">
+    <div class="container">
+    <div class="theme-switch-wrapper">
+      <label class="theme-switch">
+        <input type="checkbox" v-model="isDarkMode" @change="toggleTheme">
+        <span class="slider round"></span>
+      </label>
+      <span class="theme-label">{{ isDarkMode ? '🌙' : '☀️' }}</span>
+    </div>
+
+
     <h1>Manajemen Kegiatan Saya</h1>
 
     <div class="add-task">
@@ -30,7 +39,8 @@ export default {
     return {
       newTask: '',
       tasks: [],
-      showAll: true
+      showAll: true,
+      isDarkMode: false
     }
   },
   computed: {
