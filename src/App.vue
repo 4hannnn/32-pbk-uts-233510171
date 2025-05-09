@@ -60,20 +60,36 @@ export default {
           completed: false
         })
         this.newTask = ''
+        this.saveTasks()
       }
     },
     deleteTask(id) {
       const index = this.tasks.findIndex(task => task.id === id)
       if (index !== -1) {
         this.tasks.splice(index, 1)
+        this.saveTasks()
       }
     },
     toggleComplete(id) {
       const task = this.tasks.find(task => task.id === id)
       if (task) {
         task.completed = !task.completed
+        this.saveTasks()
+      }
+    },
+    saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(this.tasks))
+    },
+    loadTasks() {
+      const data = localStorage.getItem('tasks')
+      if (data) {
+        this.tasks = JSON.parse(data)
       }
     }
+  },
+  mounted() {
+    this.loadTasks()
   }
 }
 </script>
+
