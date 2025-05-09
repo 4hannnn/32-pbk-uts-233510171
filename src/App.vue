@@ -1,4 +1,3 @@
-<!-- src/App.vue -->
 <template>
   <div class="container">
     <h1>Manajemen Kegiatan Saya</h1>
@@ -11,6 +10,7 @@
     <ul>
       <li v-for="task in tasks" :key="task.id">
         {{ task.text }}
+        <button @click="deleteTask(task.id)">Hapus</button>
       </li>
     </ul>
   </div>
@@ -36,6 +36,12 @@ export default {
           completed: false
         })
         this.newTask = ''
+      }
+    },
+    deleteTask(id) {
+      const index = this.tasks.findIndex(task => task.id === id)
+      if (index !== -1) {
+        this.tasks.splice(index, 1)
       }
     }
   }
