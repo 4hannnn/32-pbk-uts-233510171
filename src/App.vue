@@ -7,8 +7,13 @@
       <button @click="addTask">Tambah</button>
     </div>
 
+    <div>
+      <button @click="showAll = true">Semua</button>
+      <button @click="showAll = false">Belum Selesai</button>
+    </div>
+
     <ul>
-      <li v-for="task in tasks" :key="task.id">
+      <li v-for="task in filteredTasks" :key="task.id">
         <input type="checkbox" :checked="task.completed" @change="toggleComplete(task.id)" />
         <span :style="{ textDecoration: task.completed ? 'line-through' : 'none' }">
           {{ task.text }}
@@ -24,7 +29,13 @@ export default {
   data() {
     return {
       newTask: '',
-      tasks: []
+      tasks: [],
+      showAll: true
+    }
+  },
+  computed: {
+    filteredTasks() {
+      return this.showAll ? this.tasks : this.tasks.filter(task => !task.completed)
     }
   },
   methods: {
