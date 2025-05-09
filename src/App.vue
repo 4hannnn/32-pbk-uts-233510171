@@ -1,5 +1,6 @@
+<!-- src/App.vue -->
 <template>
-    <div class="container">
+  <div class="container">
     <div class="theme-switch-wrapper">
       <label class="theme-switch">
         <input type="checkbox" v-model="isDarkMode" @change="toggleTheme">
@@ -7,35 +8,57 @@
       </label>
       <span class="theme-label">{{ isDarkMode ? '🌙' : '☀️' }}</span>
     </div>
-
-
     <h1>Manajemen Kegiatan Saya</h1>
 
     <div class="add-task">
       <input type="text" v-model="newTask" placeholder="Apa yang ingin Anda lakukan?" @keyup.enter="addTask" />
-      <button @click="addTask">Tambah</button>
+      <button @click="addTask" class="btn add-btn">
+        <span class="btn-text">Tambah</span>
+        <span class="btn-icon">+</span>
+      </button>
     </div>
 
-    <div>
-      <button @click="showAll = true">Semua</button>
-      <button @click="showAll = false">Belum Selesai</button>
+    <div class="filter-container">
+      <button @click="showAll = true" :class="{ active: showAll }" class="filter-btn">
+        Semua Kegiatan
+      </button>
+      <button @click="showAll = false" :class="{ active: !showAll }" class="filter-btn">
+        Belum Selesai
+      </button>
     </div>
 
-        <div class="stats">
-      <p>Total Kegiatan: {{ tasks.length }}</p>
-      <p>Selesai: {{ completedCount }}</p>
-      <p>Belum Selesai: {{ uncompletedCount }}</p>
+    <div v-if="filteredTasks.length === 0" class="empty-state">
+      Belum ada kegiatan untuk ditampilkan
     </div>
 
-    <ul>
-      <li v-for="task in filteredTasks" :key="task.id">
-        <input type="checkbox" :checked="task.completed" @change="toggleComplete(task.id)" />
-        <span :style="{ textDecoration: task.completed ? 'line-through' : 'none' }">
-          {{ task.text }}
-        </span>
-        <button @click="deleteTask(task.id)">Hapus</button>
+    <transition-group name="task-list" tag="ul" class="task-list">
+      <li v-for="(task, index) in filteredTasks" :key="task.id" class="task-item"
+        :class="{ completed: task.completed }">
+        <div class="task-content">
+          <label class="checkbox-container">
+            <input type="checkbox" :checked="task.completed" @change="toggleComplete(task.id)" />
+            <span class="checkmark"></span>
+          </label>
+          <span class="task-text">{{ task.text }}</span>
+        </div>
+        <button @click="deleteTask(task.id)" class="btn delete-btn">Hapus</button>
       </li>
-    </ul>
+    </transition-group>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-title">Total Kegiatan</div>
+        <div class="stat-value">{{ tasks.length }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Selesai</div>
+        <div class="stat-value">{{ completedCount }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Belum Selesai</div>
+        <div class="stat-value">{{ tasks.length - completedCount }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -43,66 +66,123 @@
 export default {
   data() {
     return {
-      newTask: '',
       tasks: [],
+      newTask: '',
       showAll: true,
-      isDarkMode: false
+      currentYear: new Date().getFullYear(),
+      isDarkMode: true,
+      theme: 'dark'
     }
   },
   computed: {
     filteredTasks() {
-      return this.showAll ? this.tasks : this.tasks.filter(task => !task.completed)
+      if (this.showAll) {
+        return this.tasks
+      } else {
+        return this.tasks.filter(task => !task.completed)
+      }
+    },
+    completedCount() {
+      return this.tasks.filter(task => task.completed).length
     }
   },
-  completedCount() {
-    return this.tasks.filter(task => task.completed).length
-  },
-  uncompletedCount() {
-    return this.tasks.filter(task => !task.completed).length
-  },
-  
   methods: {
     generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2)
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
     },
     addTask() {
       if (this.newTask.trim()) {
         this.tasks.unshift({
           id: this.generateId(),
           text: this.newTask.trim(),
-          completed: false
+          completed: false,
+          createdAt: new Date()
         })
         this.newTask = ''
-        this.saveTasks()
+        this.saveToLocalStorage()
       }
     },
     deleteTask(id) {
       const index = this.tasks.findIndex(task => task.id === id)
       if (index !== -1) {
         this.tasks.splice(index, 1)
-        this.saveTasks()
+        this.saveToLocalStorage()
       }
     },
     toggleComplete(id) {
-      const task = this.tasks.find(task => task.id === id)
-      if (task) {
-        task.completed = !task.completed
-        this.saveTasks()
+      const index = this.tasks.findIndex(task => task.id === id)
+      if (index !== -1) {
+        this.tasks[index].completed = !this.tasks[index].completed
+
+        
+        if (this.tasks[index].completed) {
+          const completedTask = this.tasks.splice(index, 1)[0]
+          this.tasks.push(completedTask)
+        }
+
+        this.saveToLocalStorage()
       }
     },
-    saveTasks() {
+    saveToLocalStorage() {
       localStorage.setItem('tasks', JSON.stringify(this.tasks))
     },
-    loadTasks() {
-      const data = localStorage.getItem('tasks')
-      if (data) {
-        this.tasks = JSON.parse(data)
+    loadFromLocalStorage() {
+      const savedTasks = localStorage.getItem('tasks')
+      if (savedTasks) {
+        try {
+          const parsedTasks = JSON.parse(savedTasks)
+
+
+          const incompleteTasks = parsedTasks.filter(task => !task.completed)
+          const completedTasks = parsedTasks.filter(task => task.completed)
+
+          this.tasks = [...incompleteTasks, ...completedTasks]
+        } catch (e) {
+          console.error('Error parsing tasks from localStorage:', e)
+          this.tasks = []
+        }
       }
+    },
+    toggleTheme() {
+      this.theme = this.isDarkMode ? 'dark' : 'light'
+      document.documentElement.setAttribute('data-theme', this.theme)
+      localStorage.setItem('theme', this.theme)
+    },
+    loadThemePreference() {
+      const savedTheme = localStorage.getItem('theme') || 'dark'
+      this.theme = savedTheme
+      this.isDarkMode = savedTheme === 'dark'
+      document.documentElement.setAttribute('data-theme', savedTheme)
     }
   },
   mounted() {
-    this.loadTasks()
+    this.loadFromLocalStorage()
+    this.loadThemePreference()
+
+
+    this.$nextTick(() => {
+      const inputEl = document.querySelector('input[type="text"]')
+      if (inputEl) {
+        inputEl.focus()
+      }
+    })
   }
 }
 </script>
 
+<style>
+.task-list-enter-active,
+.task-list-leave-active {
+  transition: all 0.5s;
+}
+
+.task-list-enter-from,
+.task-list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.task-list-move {
+  transition: transform 0.5s;
+}
+</style>
