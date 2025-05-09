@@ -21,6 +21,12 @@
       <button @click="showAll = false">Belum Selesai</button>
     </div>
 
+        <div class="stats">
+      <p>Total Kegiatan: {{ tasks.length }}</p>
+      <p>Selesai: {{ completedCount }}</p>
+      <p>Belum Selesai: {{ uncompletedCount }}</p>
+    </div>
+
     <ul>
       <li v-for="task in filteredTasks" :key="task.id">
         <input type="checkbox" :checked="task.completed" @change="toggleComplete(task.id)" />
@@ -48,6 +54,13 @@ export default {
       return this.showAll ? this.tasks : this.tasks.filter(task => !task.completed)
     }
   },
+  completedCount() {
+    return this.tasks.filter(task => task.completed).length
+  },
+  uncompletedCount() {
+    return this.tasks.filter(task => !task.completed).length
+  },
+  
   methods: {
     generateId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2)
