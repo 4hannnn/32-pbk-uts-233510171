@@ -9,7 +9,10 @@
 
     <ul>
       <li v-for="task in tasks" :key="task.id">
-        {{ task.text }}
+        <input type="checkbox" :checked="task.completed" @change="toggleComplete(task.id)" />
+        <span :style="{ textDecoration: task.completed ? 'line-through' : 'none' }">
+          {{ task.text }}
+        </span>
         <button @click="deleteTask(task.id)">Hapus</button>
       </li>
     </ul>
@@ -42,6 +45,12 @@ export default {
       const index = this.tasks.findIndex(task => task.id === id)
       if (index !== -1) {
         this.tasks.splice(index, 1)
+      }
+    },
+    toggleComplete(id) {
+      const task = this.tasks.find(task => task.id === id)
+      if (task) {
+        task.completed = !task.completed
       }
     }
   }
